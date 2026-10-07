@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMINA - Modern Online Store</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        [v-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-brand-500 selection:text-white">
+    <div id="app" v-cloak class="min-h-screen flex flex-col relative overflow-x-hidden">
+
+        <!-- Top Announcement Banner -->
+        <div class="bg-slate-900 text-white text-xs py-2 px-4 text-center flex justify-between items-center sm:px-8">
+            <div class="hidden sm:block text-slate-400">✨ 新生活応援セール開催中！最大30%OFF</div>
+            <div class="mx-auto sm:mx-0 font-medium">
+                <i class="fa-solid fa-truck-fast text-brand-500 mr-1.5"></i>
+                5,000円以上のお買い上げで<span class="text-brand-500 font-bold">送料無料</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-4 text-slate-400">
+                <a href="#" class="hover:text-white transition">ヘルプ</a>
+                <a href="#" class="hover:text-white transition">店舗検索</a>
+                <a href="#" class="hover:text-white transition">JP / JPY</a>
+            </div>
+        </div>
+
+        <!-- Main Navigation Header -->
+        <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
+                    
+                    <!-- Mobile Menu Button & Brand Logo -->
+                    <div class="flex items-center space-x-3">
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden text-slate-600 hover:text-slate-900 p-2 rounded-lg">
+                            <i class="fa-solid fa-bars text-xl"></i>
+                        </button>
+                        <a href="#" class="flex items-center space-x-2 text-2xl font-black tracking-tight text-slate-900">
+                            <span class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 text-white flex items-center justify-center text-lg shadow-md shadow-brand-500/20">L</span>
+                            <span>LUMINA<span class="text-brand-600">.</span></span>
+                        </a>
+                    </div>
+
+                    <!-- Search Bar (Desktop & Tablet) -->
+                    <div class="hidden md:flex flex-1 max-w-md relative">
+                        <input 
+                            type="text" 
+                            v-model="searchQuery" 
+                            placeholder="商品名、カテゴリで検索..." 
+                            class="w-full bg-slate-100 border border-slate-200 rounded-full py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition"
+                        >
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Header Icons Navigation -->
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <!-- Search Icon (Mobile Toggle) -->
+                        <button @click="mobileSearchOpen = !mobileSearchOpen" class="md:hidden text-slate-700 hover:text-brand-600 p-2 rounded-full hover:bg-slate-100 transition">
+                            <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                        </button>
+
+                        <!-- Wishlist Button -->
+                        <button @click="openWishlistModal" class="relative text-slate-700 hover:text-brand-600 p-2 rounded-full hover:bg-slate-100 transition">
+                            <i class="fa-regular fa-heart text-xl"></i>
+                            <span v-if="wishlist.length > 0" class="absolute top-1 right-1 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                                {{ wishlist.length }}
+                            </span>
+                        </button>
+
+                        <!-- Cart Button -->
+                        <button @click="isCartOpen = true" class="relative text-slate-700 hover:text-brand-600 p-2 rounded-full hover:bg-slate-100 transition">
+                            <i class="fa-solid fa-bag-shopping text-xl"></i>
+                            <span v-if="cartTotalCount > 0" class="absolute top-1 right-1 bg-brand-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                                {{ cartTotalCount }}
+                            </span>
+                        </button>
+
+                        <!-- Account / User Icon -->
+                        <button class="hidden sm:flex items-center space-x-2 text-slate-700 hover:text-brand-600 p-2 rounded-lg hover:bg-slate-100 transition">
+                            <i class="fa-regular fa-user text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Search Expandable Bar -->
+                <div v-if="mobileSearchOpen" class="md:hidden py-3 border-t border-slate-100">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            v-model="searchQuery" 
+                            placeholder="商品名、カテゴリで検索..." 
+                            class="w-full bg-slate-100 border border-slate-200 rounded-full py-2 pl-9 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        >
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Category Sub-Nav (Desktop) -->
+                <nav class="hidden lg:flex items-center space-x-8 py-3 border-t border-slate-100 text-sm font-medium">
+                    <button 
+                        @click="selectedCategory = 'all'" 
+                        :class="selectedCategory === 'all' ? 'text-brand-600 font-semibold' : 'text-slate-600 hover:text-slate-900'"
+                        class="transition flex items-center gap-1.5"
+                    >
+                        すべての商品
+                    </button>
+                    <button 
+                        v-for="cat in categories" 
+                        :key="cat.id" 
+                        @click="selectedCategory = cat.id"
+                        :class="selectedCategory === cat.id ? 'text-brand-600 font-semibold' : 'text-slate-600 hover:text-slate-900'"
+                        class="transition flex items-center gap-1.5"
+                    >
+                        <i :class="cat.icon" class="text-xs text-slate-400"></i>
+                        {{ cat.name }}
+                    </button>
+                    <a href="#sale" @click="selectedCategory = 'all'; selectedFilterBadge = 'sale'" class="text-rose-600 hover:text-rose-700 font-bold ml-auto flex items-center gap-1">
+                        <i class="fa-solid fa-fire"></i> セール対象品
+                    </a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Mobile Drawer Navigation -->
+        <div v-if="mobileMenuOpen" class="fixed inset-0 z-50 lg:hidden flex">
+            <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="mobileMenuOpen = false"></div>
+            <div class="relative bg-white w-4/5 max-w-xs h-full shadow-2xl p-6 flex flex-col z-10 overflow-y-auto">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <span class="font-bold text-lg text-slate-900">メニュー</span>
+                    <button @click="mobileMenuOpen = false" class="text-slate-400 hover:text-slate-600 p-1">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+                <div class="py-4 space-y-3">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">カテゴリ</p>
+                    <button 
+                        @click="selectedCategory = 'all'; mobileMenuOpen = false" 
+                        class="w-full text-left py-2 px-3 rounded-lg text-sm font-medium hover:bg-slate-100 transition"
+                        :class="selectedCategory === 'all' ? 'bg-brand-50 text-brand-600' : 'text-slate-700'"
+                    >
+                        すべての商品
+                    </button>
+                    <button 
+                        v-for="cat in categories" 
+                        :key="cat.id" 
+                        @click="selectedCategory = cat.id; mobileMenuOpen = false" 
+                        class="w-full text-left py-2 px-3 rounded-lg text-sm font-medium hover:bg-slate-100 transition flex items-center gap-2"
+                        :class="selectedCategory === cat.id ? 'bg-brand-50 text-brand-600' : 'text-slate-700'"
+                    >
+                        <i :class="cat.icon" class="w-5 text-center text-slate-400"></i>
+                        {{ cat.name }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <section class="relative bg-slate-900 text-white overflow-hidden">
+            <div class="absolute inset-0 z-0 opacity-40">
+                <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80" class="w-full h-full object-cover" alt="Hero Background">
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent z-0"></div>
+            
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 md:py-32 relative z-10">
+                <div class="max-w-xl space-y-6">
+                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-400/30 text-brand-300 text-xs font-semibold tracking-wide uppercase">
+                        <i class="fa-solid fa-sparkles text-brand-400"></i> 2026 Spring Collection
+                    </span>
+                    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
+                        洗練された日常を飾る、<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-indigo-300">新しいライフスタイル。</span>
+                    </h1>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        厳選されたプレミアム・ガジェット、ミニマルなインテリア、最新のトレンドファッションを特別価格でお届けします。
+                    </p>
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <a href="#products" class="px-6 py-3.5 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-xl shadow-lg shadow-brand-600/30 transition transform active:scale-95 flex items-center gap-2">
+                            今すぐチェック <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </a>
+                        <button @click="selectedFilterBadge = 'sale'" class="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl border border-white/20 backdrop-blur-sm transition">
+                            セール品を見る
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Category Navigation Cards -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <i class="fa-solid fa-shapes text-brand-600"></i> カテゴリから探す
+            </h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                <div 
+                    v-for="cat in categories" 
+                    :key="cat.id" 
+                    @click="selectedCategory = cat.id" 
+                    class="group relative h-36 sm:h-44 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200/60"
+                >
+                    <img :src="cat.image" :alt="cat.name" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent"></div>
+                    <div class="absolute bottom-4 left-4 right-4 text-white">
+                        <div class="flex items-center space-x-2">
+                            <i :class="cat.icon" class="text-brand-400"></i>
+                            <h3 class="font-bold text-sm sm:text-base">{{ cat.name }}</h3>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-1 opacity-0 group-hover:opacity-100 transition duration-300 hidden sm:block">アイテムを見る &rarr;</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Product Section with Filters -->
+        <section id="products" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+            
+            <div class="flex flex-col lg:flex-row gap-8">
+                
+                <!-- Filter Sidebar (Desktop) -->
+                <aside class="w-full lg:w-64 space-y-6 flex-shrink-0">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm sticky top-24 space-y-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <h3 class="font-bold text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-brand-600"></i> フィルター
+                            </h3>
+                            <button @click="resetFilters" class="text-xs text-brand-600 hover:text-brand-700 font-medium">リセット</button>
+                        </div>
+
+                        <!-- Filter Status Badges -->
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">絞り込み</label>
+                            <div class="flex flex-wrap gap-2">
+                                <button 
+                                    @click="selectedFilterBadge = selectedFilterBadge === 'all' ? 'all' : 'all'"
+                                    :class="selectedFilterBadge === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                    class="text-xs px-3 py-1.5 rounded-full font-medium transition"
+                                >
+                                    すべて
+                                </button>
+                                <button 
+                                    @click="selectedFilterBadge = selectedFilterBadge === 'sale' ? 'all' : 'sale'"
+                                    :class="selectedFilterBadge === 'sale' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                    class="text-xs px-3 py-1.5 rounded-full font-medium transition"
+                                >
+                                    🔥 セール対象
+                                </button>
+                                <button 
+                                    @click="selectedFilterBadge = selectedFilterBadge === 'new' ? 'all' : 'new'"
+                                    :class="selectedFilterBadge === 'new' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                    class="text-xs px-3 py-1.5 rounded-full font-medium transition"
+                                >
+                                    ✨ NEW
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Category Filter List -->
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">カテゴリ</label>
+                            <div class="space-y-1.5">
+                                <button 
+                                    @click="selectedCategory = 'all'"
+                                    class="w-full text-left px-3 py-1.5 rounded-lg text-sm transition flex items-center justify-between"
+                                    :class="selectedCategory === 'all' ? 'bg-brand-50 text-brand-600 font-bold' : 'text-slate-600 hover:bg-slate-50'"
+                                >
+                                    <span>すべての商品</span>
+                                    <span class="text-xs text-slate-400">({{ products.length }})</span>
+                                </button>
+                                <button 
+                                    v-for="cat in categories" 
+                                    :key="cat.id" 
+                                    @click="selectedCategory = cat.id"
+                                    class="w-full text-left px-3 py-1.5 rounded-lg text-sm transition flex items-center justify-between"
+                                    :class="selectedCategory === cat.id ? 'bg-brand-50 text-brand-600 font-bold' : 'text-slate-600 hover:bg-slate-50'"
+                                >
+                                    <span>{{ cat.name }}</span>
+                                    <span class="text-xs text-slate-400">({{ getCategoryCount(cat.id) }})</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Price Range Slider -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">上限価格</label>
+                                <span class="text-xs font-bold text-brand-600">¥{{ maxPriceFilter.toLocaleString() }}</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="1000" 
+                                max="50000" 
+                                step="1000" 
+                                v-model.number="maxPriceFilter" 
+                                class="w-full accent-brand-600 cursor-pointer"
+                            >
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                                <span>¥1,000</span>
+                                <span>¥50,000</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </aside>
+
+                <!-- Main Product Catalog Area -->
+                <main class="flex-1">
+                    
+                    <!-- Control Bar (Results Count & Sorting) -->
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="text-sm text-slate-600">
+                            検索結果: <span class="font-bold text-slate-900">{{ filteredProducts.length }}</span> 件
+                        </div>
+
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <label for="sortBy" class="text-xs font-bold text-slate-500 whitespace-nowrap">並び替え:</label>
+                            <select 
+                                id="sortBy" 
+                                v-model="sortBy" 
+                                class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto"
+                            >
+                                <option value="featured">おすすめ順</option>
+                                <option value="price-asc">価格が安い順</option>
+                                <option value="price-desc">価格が高い順</option>
+                                <option value="rating">高評価順</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- No Products Found Empty State -->
+                    <div v-if="filteredProducts.length === 0" class="bg-white rounded-2xl border border-slate-200 p-12 text-center my-8">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 text-2xl mb-4">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">条件に一致する商品が見つかりませんでした</h3>
+                        <p class="text-sm text-slate-500 mb-6">検索キーワードやフィルター条件を変更してお試しください。</p>
+                        <button @click="resetFilters" class="px-5 py-2.5 bg-brand-600 text-white font-medium text-sm rounded-xl hover:bg-brand-700 transition">
+                            フィルターをクリア
+                        </button>
+                    </div>
+
+                    <!-- Product Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div 
+                            v-for="product in filteredProducts" 
+                            :key="product.id"
+                            class="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:border-slate-300 transition-all duration-300 flex flex-col relative"
+                        >
+                            <!-- Product Badges -->
+                            <div class="absolute top-3 left-3 z-10 flex flex-col gap-1">
+                                <span v-if="product.isSale" class="bg-rose-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
+                                    SALE {{ Math.round((1 - product.price / product.originalPrice) * 100) }}% OFF
+                                </span>
+                                <span v-if="product.isNew" class="bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
+                                    NEW
+                                </span>
+                            </div>
+
+                            <!-- Wishlist Toggle Button -->
+                            <button 
+                                @click.stop="toggleWishlist(product)" 
+                                class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md text-slate-600 hover:text-rose-500 hover:bg-white flex items-center justify-center shadow-md transition"
+                            >
+                                <i :class="isInWishlist(product.id) ? 'fa-solid text-rose-500' : 'fa-regular'" class="fa-heart text-base"></i>
+                            </button>
+
+                            <!-- Product Image & Quick View Hover Button -->
+                            <div class="relative aspect-square bg-slate-100 overflow-hidden cursor-pointer" @click="openQuickView(product)">
+                                <img 
+                                    :src="product.image" 
+                                    :alt="product.name" 
+                                    class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                    onerror="this.src='https://placehold.co/600x600/f3f4f6/9ca3af?text=No+Image'"
+                                >
+                                <div class="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
+                                    <button class="px-4 py-2 bg-white/90 backdrop-blur-sm text-slate-900 text-xs font-bold rounded-xl shadow-lg transform translate-y-2 group-hover:translate-y-0 transition duration-300 hover:bg-white">
+                                        <i class="fa-regular fa-eye mr-1.5"></i> クイックビュー
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Product Info -->
+                            <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                                <div>
+                                    <div class="text-xs text-brand-600 font-semibold mb-1 uppercase tracking-wider">{{ getCategoryName(product.category) }}</div>
+                                    <h3 @click="openQuickView(product)" class="font-bold text-slate-800 text-base hover:text-brand-600 cursor-pointer transition line-clamp-1">
+                                        {{ product.name }}
+                                    </h3>
+                                    
+                                    <!-- Rating Stars -->
+                                    <div class="flex items-center space-x-1 mt-1.5">
+                                        <div class="flex text-amber-400 text-xs">
+                                            <i v-for="i in 5" :key="i" :class="i <= Math.round(product.rating) ? 'fa-solid fa-star' : 'fa-regular fa-star text-slate-300'"></i>
+                                        </div>
+                                        <span class="text-xs text-slate-400 font-medium">({{ product.reviewsCount }})</span>
+                                    </div>
+                                </div>
+
+                                <!-- Price and Add to Cart -->
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <div class="text-lg font-black text-slate-900">
+                                            ¥{{ product.price.toLocaleString() }}
+                                        </div>
+                                        <div v-if="product.originalPrice > product.price" class="text-xs text-slate-400 line-through">
+                                            ¥{{ product.originalPrice.toLocaleString() }}
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        @click="addToCart(product)" 
+                                        class="px-3.5 py-2 bg-slate-900 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm active:scale-95"
+                                    >
+                                        <i class="fa-solid fa-cart-plus"></i> カートへ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </section>
+
+        <!-- Quick View Product Detail Modal -->
+        <div v-if="quickViewProduct" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" @click="quickViewProduct = null"></div>
+            <div class="relative bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-10 border border-slate-100 p-6 sm:p-8">
+                
+                <button @click="quickViewProduct = null" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Image -->
+                    <div class="aspect-square bg-slate-100 rounded-2xl overflow-hidden relative">
+                        <img :src="quickViewProduct.image" :alt="quickViewProduct.name" class="w-full h-full object-cover">
+                        <span v-if="quickViewProduct.isSale" class="absolute top-3 left-3 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            SALE
+                        </span>
+                    </div>
+
+                    <!-- Detail Info -->
+                    <div class="flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-xs font-bold text-brand-600 tracking-wider uppercase">{{ getCategoryName(quickViewProduct.category) }}</span>
+                            <h2 class="text-2xl font-bold text-slate-900 mt-1">{{ quickViewProduct.name }}</h2>
+                            
+                            <div class="flex items-center space-x-2 mt-2">
+                                <div class="flex text-amber-400 text-sm">
+                                    <i v-for="i in 5" :key="i" :class="i <= Math.round(quickViewProduct.rating) ? 'fa-solid fa-star' : 'fa-regular fa-star text-slate-300'"></i>
+                                </div>
+                                <span class="text-xs text-slate-500 font-medium">{{ quickViewProduct.rating }} ({{ quickViewProduct.reviewsCount }} レビュー)</span>
+                            </div>
+
+                            <div class="mt-4 flex items-baseline space-x-3">
+                                <span class="text-3xl font-black text-slate-900">¥{{ quickViewProduct.price.toLocaleString() }}</span>
+                                <span v-if="quickViewProduct.originalPrice > quickViewProduct.price" class="text-sm text-slate-400 line-through">¥{{ quickViewProduct.originalPrice.toLocaleString() }}</span>
+                            </div>
+
+                            <p class="text-slate-600 text-sm mt-4 leading-relaxed">
+                                {{ quickViewProduct.description }}
+                            </p>
+                        </div>
+
+                        <!-- Options selection -->
+                        <div class="space-y-4 pt-4 border-t border-slate-100">
+                            <!-- Color Selection -->
+                            <div v-if="quickViewProduct.colors && quickViewProduct.colors.length">
+                                <label class="text-xs font-bold text-slate-700 block mb-2">カラー: <span class="text-brand-600 font-semibold">{{ selectedColor }}</span></label>
+                                <div class="flex space-x-2">
+                                    <button 
+                                        v-for="color in quickViewProduct.colors" 
+                                        :key="color"
+                                        @click="selectedColor = color"
+                                        :class="selectedColor === color ? 'ring-2 ring-brand-600 ring-offset-2' : 'border-slate-200'"
+                                        class="px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50 transition"
+                                    >
+                                        {{ color }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Quantity Selector -->
+                            <div>
+                                <label class="text-xs font-bold text-slate-700 block mb-2">数量</label>
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                                        <button @click="modalQty = Math.max(1, modalQty - 1)" class="px-3 py-2 text-slate-600 hover:bg-slate-200 transition">
+                                            <i class="fa-solid fa-minus text-xs"></i>
+                                        </button>
+                                        <span class="px-4 text-sm font-bold text-slate-800">{{ modalQty }}</span>
+                                        <button @click="modalQty++" class="px-3 py-2 text-slate-600 hover:bg-slate-200 transition">
+                                            <i class="fa-solid fa-plus text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3 pt-4">
+                            <button 
+                                @click="addModalToCart" 
+                                class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 px-6 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30"
+                            >
+                                <i class="fa-solid fa-bag-shopping"></i> カートに追加
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shopping Cart Slideover Drawer -->
+        <div v-if="isCartOpen" class="fixed inset-0 z-50 flex justify-end">
+            <div class="fixed inset-0 bg-slate-950/50 backdrop-blur-sm" @click="isCartOpen = false"></div>
+            
+            <div class="relative bg-white w-full max-w-md h-full shadow-2xl z-10 flex flex-col justify-between">
+                
+                <!-- Cart Header -->
+                <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-bag-shopping text-brand-600 text-lg"></i>
+                        <h3 class="font-bold text-lg text-slate-900">ショッピングカート</h3>
+                        <span class="bg-brand-100 text-brand-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                            {{ cartTotalCount }}
+                        </span>
+                    </div>
+                    <button @click="isCartOpen = false" class="text-slate-400 hover:text-slate-600 p-1">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Free Shipping Progress Bar -->
+                <div class="bg-brand-50/60 p-4 border-b border-brand-100">
+                    <div class="flex justify-between text-xs font-semibold mb-1.5">
+                        <span class="text-slate-700">
+                            <template v-if="freeShippingRemaining <= 0">
+                                🎉 <span class="text-emerald-600 font-bold">送料無料達成！</span>
+                            </template>
+                            <template v-else>
+                                あと <span class="text-brand-600 font-bold">¥{{ freeShippingRemaining.toLocaleString() }}</span> で送料無料！
+                            </template>
+                        </span>
+                        <span class="text-slate-500">¥5,000</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div 
+                            class="bg-brand-600 h-full transition-all duration-500"
+                            :style="{ width: Math.min(100, (cartSubtotal / 5000) * 100) + '%' }"
+                        ></div>
+                    </div>
+                </div>
+
+                <!-- Cart Items List -->
+                <div class="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
+                    <div v-if="cart.length === 0" class="text-center py-16 space-y-3">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 text-2xl">
+                            <i class="fa-solid fa-cart-flatbed"></i>
+                        </div>
+                        <p class="text-slate-500 font-medium">カートは空です</p>
+                        <button @click="isCartOpen = false" class="text-xs text-brand-600 font-bold hover:underline">お買い物を続ける &rarr;</button>
+                    </div>
+
+                    <div v-for="(item, index) in cart" :key="index" class="flex gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <img :src="item.image" :alt="item.name" class="w-20 h-20 object-cover rounded-xl bg-white border">
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <h4 class="font-bold text-sm text-slate-800 line-clamp-1">{{ item.name }}</h4>
+                                    <button @click="removeFromCart(index)" class="text-slate-400 hover:text-rose-500 text-xs ml-2">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                                <span v-if="item.selectedColor" class="text-[11px] text-slate-400 block mt-0.5">カラー: {{ item.selectedColor }}</span>
+                            </div>
+
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="font-bold text-sm text-slate-900">¥{{ item.price.toLocaleString() }}</span>
+                                <div class="flex items-center border border-slate-200 rounded-lg bg-white">
+                                    <button @click="updateCartQty(index, -1)" class="px-2 py-0.5 text-slate-500 hover:bg-slate-100 rounded-l-lg">
+                                        <i class="fa-solid fa-minus text-[10px]"></i>
+                                    </button>
+                                    <span class="px-2.5 text-xs font-bold text-slate-800">{{ item.qty }}</span>
+                                    <button @click="updateCartQty(index, 1)" class="px-2 py-0.5 text-slate-500 hover:bg-slate-100 rounded-r-lg">
+                                        <i class="fa-solid fa-plus text-[10px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coupon & Checkout Footer -->
+                <div v-if="cart.length > 0" class="p-5 border-t border-slate-100 bg-white space-y-4">
+                    
+                    <!-- Coupon Input -->
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            v-model="couponCode" 
+                            placeholder="クーポンコード (例: LUMINA10)" 
+                            class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs flex-1 uppercase focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        >
+                        <button @click="applyCoupon" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
+                            適用
+                        </button>
+                    </div>
+                    <div v-if="appliedDiscount > 0" class="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check"></i> クーポンが適用されました ({{ appliedDiscount * 100 }}% OFF)
+                    </div>
+
+                    <!-- Price Calculations -->
+                    <div class="space-y-1.5 text-sm">
+                        <div class="flex justify-between text-slate-500">
+                            <span>小計</span>
+                            <span>¥{{ cartSubtotal.toLocaleString() }}</span>
+                        </div>
+                        <div v-if="appliedDiscount > 0" class="flex justify-between text-emerald-600 font-medium">
+                            <span>割引額</span>
+                            <span>-¥{{ discountAmount.toLocaleString() }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-500">
+                            <span>送料</span>
+                            <span>{{ freeShippingRemaining <= 0 ? '無料' : '¥500' }}</span>
+                        </div>
+                        <div class="flex justify-between text-lg font-black text-slate-900 pt-2 border-t border-slate-100">
+                            <span>合計 (税込)</span>
+                            <span class="text-brand-600">¥{{ cartFinalTotal.toLocaleString() }}</span>
+                        </div>
+                    </div>
+
+                    <button 
+                        @click="startCheckout" 
+                        class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-600/30 transition flex items-center justify-center gap-2"
+                    >
+                        購入手続きへ進む <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Checkout Process Modal Simulator -->
+        <div v-if="isCheckoutOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"></div>
+            <div class="relative bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-10 p-6 sm:p-8">
+                
+                <!-- Checkout Header Steps -->
+                <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+                    <h3 class="font-bold text-xl text-slate-900">ご注文手続き</h3>
+                    <button @click="isCheckoutOpen = false" class="text-slate-400 hover:text-slate-600 p-1">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Step Indicator -->
+                <div class="flex justify-between items-center my-6 text-xs font-bold">
+                    <div class="flex items-center space-x-2" :class="checkoutStep >= 1 ? 'text-brand-600' : 'text-slate-300'">
+                        <span class="w-6 h-6 rounded-full border-2 flex items-center justify-center" :class="checkoutStep >= 1 ? 'border-brand-600 bg-brand-50' : 'border-slate-200'">1</span>
+                        <span>配送情報</span>
+                    </div>
+                    <div class="h-0.5 flex-1 mx-3 bg-slate-200"></div>
+                    <div class="flex items-center space-x-2" :class="checkoutStep >= 2 ? 'text-brand-600' : 'text-slate-300'">
+                        <span class="w-6 h-6 rounded-full border-2 flex items-center justify-center" :class="checkoutStep >= 2 ? 'border-brand-600 bg-brand-50' : 'border-slate-200'">2</span>
+                        <span>お支払い</span>
+                    </div>
+                    <div class="h-0.5 flex-1 mx-3 bg-slate-200"></div>
+                    <div class="flex items-center space-x-2" :class="checkoutStep >= 3 ? 'text-brand-600' : 'text-slate-300'">
+                        <span class="w-6 h-6 rounded-full border-2 flex items-center justify-center" :class="checkoutStep >= 3 ? 'border-brand-600 bg-brand-50' : 'border-slate-200'">3</span>
+                        <span>完了</span>
+                    </div>
+                </div>
+
+                <!-- Step 1: Shipping Address Form -->
+                <div v-if="checkoutStep === 1" class="space-y-4">
+                    <h4 class="font-bold text-slate-800 text-sm">お届け先情報の入力</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-bold text-slate-600 block mb-1">お名前 (姓)</label>
+                            <input type="text" v-model="checkoutForm.lastName" placeholder="山田" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-600 block mb-1">お名前 (名)</label>
+                            <input type="text" v-model="checkoutForm.firstName" placeholder="太郎" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 block mb-1">郵便番号</label>
+                        <input type="text" v-model="checkoutForm.zip" placeholder="100-0001" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 block mb-1">住所</label>
+                        <input type="text" v-model="checkoutForm.address" placeholder="東京都千代田区1-1-1" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <button @click="checkoutStep = 2" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition mt-4">
+                        お支払い方法選択へ進む
+                    </button>
+                </div>
+
+                <!-- Step 2: Payment Selection -->
+                <div v-if="checkoutStep === 2" class="space-y-4">
+                    <h4 class="font-bold text-slate-800 text-sm">お支払い方法の選択</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+                            <div class="flex items-center space-x-3">
+                                <input type="radio" name="payment" value="credit" v-model="checkoutForm.paymentMethod" class="accent-brand-600">
+                                <span class="text-xs font-bold text-slate-800">クレジットカード</span>
+                            </div>
+                            <div class="flex space-x-1 text-slate-400 text-sm">
+                                <i class="fa-brands fa-cc-visa"></i>
+                                <i class="fa-brands fa-cc-mastercard"></i>
+                                <i class="fa-brands fa-cc-jcb"></i>
+                            </div>
+                        </label>
+                        <label class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition">
+                            <div class="flex items-center space-x-3">
+                                <input type="radio" name="payment" value="convenience" v-model="checkoutForm.paymentMethod" class="accent-brand-600">
+                                <span class="text-xs font-bold text-slate-800">コンビニ決済 / PayPay</span>
+                            </div>
+                            <i class="fa-solid fa-store text-slate-400 text-xs"></i>
+                        </label>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 flex gap-3">
+                        <button @click="checkoutStep = 1" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-xs">
+                            戻る
+                        </button>
+                        <button @click="completeOrder" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition text-xs shadow-lg shadow-brand-600/30">
+                            注文を確定する (¥{{ cartFinalTotal.toLocaleString() }})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Order Completed Confirmation -->
+                <div v-if="checkoutStep === 3" class="text-center py-6 space-y-4">
+                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-900">ご注文ありがとうございます！</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        注文番号: <span class="font-mono font-bold text-slate-800">#LUM-{{ Math.floor(100000 + Math.random() * 900000) }}</span><br>
+                        ご登録のメールアドレスに注文確認メールを送信しました。
+                    </p>
+                    <button @click="closeCheckout" class="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition">
+                        トップページへ戻る
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Wishlist Modal -->
+        <div v-if="isWishlistOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" @click="isWishlistOpen = false"></div>
+            <div class="relative bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl z-10 p-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                    <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-heart text-rose-500"></i> お気に入りアイテム ({{ wishlist.length }})
+                    </h3>
+                    <button @click="isWishlistOpen = false" class="text-slate-400 hover:text-slate-600 p-1">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <div v-if="wishlist.length === 0" class="text-center py-12 text-slate-400">
+                    <i class="fa-regular fa-heart text-4xl mb-3 block"></i>
+                    <p class="text-sm">お気に入りに登録された商品はありません。</p>
+                </div>
+
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div v-for="item in wishlist" :key="item.id" class="flex gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <img :src="item.image" :alt="item.name" class="w-16 h-16 object-cover rounded-xl bg-white">
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800 line-clamp-1">{{ item.name }}</h4>
+                                <span class="text-xs font-bold text-slate-900">¥{{ item.price.toLocaleString() }}</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-2">
+                                <button @click="addToCart(item)" class="text-xs text-brand-600 font-bold hover:underline">
+                                    カートに追加
+                                </button>
+                                <button @click="toggleWishlist(item)" class="text-slate-400 hover:text-rose-500 text-xs">
+                                    削除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification Stack -->
+        <div class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none">
+            <transition-group name="toast">
+                <div 
+                    v-for="toast in toasts" 
+                    :key="toast.id" 
+                    class="pointer-events-auto bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 text-xs font-medium border border-slate-800"
+                >
+                    <i :class="toast.icon || 'fa-solid fa-circle-check text-emerald-400'"></i>
+                    <span>{{ toast.message }}</span>
+                </div>
+            </transition-group>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 mt-20 text-xs border-t border-slate-800">
+            <!-- Newsletter Banner -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-slate-800">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="space-y-1 text-center md:text-left">
+                        <h3 class="text-lg font-bold text-white">ニュースレターに登録する</h3>
+                        <p class="text-slate-400">新商品の入荷情報や特別割引クーポンをいち早くお届けします。</p>
+                    </div>
+                    <div class="flex w-full md:w-auto max-w-md gap-2">
+                        <input 
+                            type="email" 
+                            v-model="newsletterEmail" 
+                            placeholder="メールアドレスを入力..." 
+                            class="bg-slate-800 border border-slate-700 text-white px-4 py-2.5 rounded-xl flex-1 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        >
+                        <button @click="subscribeNewsletter" class="bg-brand-600 hover:bg-brand-500 text-white font-bold px-5 py-2.5 rounded-xl transition whitespace-nowrap">
+                            購読する
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Links Grid -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-sm">ショップ</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-white transition">新着アイテム</a></li>
+                        <li><a href="#" class="hover:text-white transition">セール商品</a></li>
+                        <li><a href="#" class="hover:text-white transition">ランキング</a></li>
+                    </ul>
+                </div>
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-sm">サポート</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-white transition">よくある質問</a></li>
+                        <li><a href="#" class="hover:text-white transition">配送・送料について</a></li>
+                        <li><a href="#" class="hover:text-white transition">返品・交換</a></li>
+                    </ul>
+                </div>
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-sm">企業情報</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-white transition">会社概要</a></li>
+                        <li><a href="#" class="hover:text-white transition">プライバシーポリシー</a></li>
+                        <li><a href="#" class="hover:text-white transition">特定商取引法に基づく表記</a></li>
+                    </ul>
+                </div>
+                <div class="space-y-3">
+                    <h4 class="font-bold text-white text-sm">公式SNS</h4>
+                    <div class="flex space-x-3 text-lg">
+                        <a href="#" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-brand-600 hover:text-white flex items-center justify-center transition"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-brand-600 hover:text-white flex items-center justify-center transition"><i class="fa-brands fa-x-twitter"></i></a>
+                        <a href="#" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-brand-600 hover:text-white flex items-center justify-center transition"><i class="fa-brands fa-line"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500">
+                <p>&copy; 2026 LUMINA Inc. All rights reserved.</p>
+                <div class="flex space-x-3 text-lg">
+                    <i class="fa-brands fa-cc-visa"></i>
+                    <i class="fa-brands fa-cc-mastercard"></i>
+                    <i class="fa-brands fa-cc-jcb"></i>
+                    <i class="fa-brands fa-cc-apple-pay"></i>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                // Application State
+                const searchQuery = ref('');
+                const selectedCategory = ref('all');
+                const selectedFilterBadge = ref('all');
+                const maxPriceFilter = ref(50000);
+                const sortBy = ref('featured');
+
+                // UI Controls
+                const mobileMenuOpen = ref(false);
+                const mobileSearchOpen = ref(false);
+                const isCartOpen = ref(false);
+                const isWishlistOpen = ref(false);
+                const quickViewProduct = ref(null);
+                const selectedColor = ref('');
+                const modalQty = ref(1);
+
+                // Cart & Wishlist & Checkout
+                const cart = ref([]);
+                const wishlist = ref([]);
+                const couponCode = ref('');
+                const appliedDiscount = ref(0);
+                const isCheckoutOpen = ref(false);
+                const checkoutStep = ref(1);
+                const checkoutForm = ref({
+                    firstName: '',
+                    lastName: '',
+                    zip: '',
+                    address: '',
+                    paymentMethod: 'credit'
+                });
+
+                const newsletterEmail = ref('');
+                const toasts = ref([]);
+
+                const categories = [
+                    { id: 'fashion', name: 'ファッション', icon: 'fa-solid fa-shirt', image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=600&q=80' },
+                    { id: 'gadgets', name: 'ガジェット', icon: 'fa-solid fa-headphones', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80' },
+                    { id: 'interior', name: 'インテリア', icon: 'fa-solid fa-couch', image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80' },
+                    { id: 'cosmetics', name: 'コスメ', icon: 'fa-solid fa-wand-magic-sparkles', image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80' }
+                ];
+
+                const products = ref([
+                    {
+                        id: 1,
+                        name: 'ノイズキャンセリング ワイヤレスヘッドホン',
+                        category: 'gadgets',
+                        price: 24800,
+                        originalPrice: 29800,
+                        rating: 4.8,
+                        reviewsCount: 124,
+                        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+                        isSale: true,
+                        isNew: false,
+                        description: '圧倒的な静寂と感動の高音質。長時間の装着でも快適なプレミアムレザーパッドを採用したフラッグシップモデル。',
+                        colors: ['ブラック', 'シルバー', 'ミッドナイトブルー']
+                    },
+                    {
+                        id: 2,
+                        name: 'オーガニックコットン オーバーサイズTシャツ',
+                        category: 'fashion',
+                        price: 4980,
+                        originalPrice: 4980,
+                        rating: 4.5,
+                        reviewsCount: 89,
+                        image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
+                        isSale: false,
+                        isNew: true,
+                        description: '肌触りの良い上質なオーガニックコットン100%で作られたモダンシルエットのTシャツ。',
+                        colors: ['ホワイト', 'セージグリーン', 'スモーキーグレー']
+                    },
+                    {
+                        id: 3,
+                        name: '北欧デザイン アロマディフューザー',
+                        category: 'interior',
+                        price: 6800,
+                        originalPrice: 8500,
+                        rating: 4.7,
+                        reviewsCount: 56,
+                        image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?auto=format&fit=crop&w=800&q=80',
+                        isSale: true,
+                        isNew: false,
+                        description: '超音波ミストと温もりあるLEDライトで心地よい空間を演出するスタイリッシュディフューザー。',
+                        colors: ['ナチュラルウッド', 'ホワイトセラミック']
+                    },
+                    {
+                        id: 4,
+                        name: 'ナチュラルボタニカル リップバーム set',
+                        category: 'cosmetics',
+                        price: 2400,
+                        originalPrice: 2400,
+                        rating: 4.6,
+                        reviewsCount: 42,
+                        image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
+                        isSale: false,
+                        isNew: true,
+                        description: '天然由来成分100%の保湿力で、一日中しっとり潤うリップバーム3種セット。',
+                        colors: ['アソートセット']
+                    },
+                    {
+                        id: 5,
+                        name: 'ミニマルレザー ミニウォレット',
+                        category: 'fashion',
+                        price: 12800,
+                        originalPrice: 15800,
+                        rating: 4.9,
+                        reviewsCount: 210,
+                        image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=800&q=80',
+                        isSale: true,
+                        isNew: false,
+                        description: '手のひらサイズで必要なカードと小銭をスマートに収納。職人手塗りの本革使用。',
+                        colors: ['キャメル', 'ブラック', 'カーキ']
+                    },
+                    {
+                        id: 6,
+                        name: 'メカニカル ワイヤレスキーボード',
+                        category: 'gadgets',
+                        price: 18900,
+                        originalPrice: 18900,
+                        rating: 4.7,
+                        reviewsCount: 78,
+                        image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80',
+                        isSale: false,
+                        isNew: true,
+                        description: '打鍵感にこだわった静音赤軸メカニカルスイッチ搭載。Mac/Windows両対応。',
+                        colors: ['ダークグレー', 'レトロホワイト']
+                    }
+                ]);
+
+                // Filtered Products Logic
+                const filteredProducts = computed(() => {
+                    return products.value.filter(p => {
+                        // Category Filter
+                        if (selectedCategory.value !== 'all' && p.category !== selectedCategory.value) {
+                            return false;
+                        }
+                        // Badge Filter
+                        if (selectedFilterBadge.value === 'sale' && !p.isSale) return false;
+                        if (selectedFilterBadge.value === 'new' && !p.isNew) return false;
+                        
+                        // Price Filter
+                        if (p.price > maxPriceFilter.value) return false;
+
+                        // Search Query Filter
+                        if (searchQuery.value.trim() !== '') {
+                            const query = searchQuery.value.toLowerCase();
+                            return p.name.toLowerCase().includes(query) || getCategoryName(p.category).includes(query);
+                        }
+
+                        return true;
+                    }).sort((a, b) => {
+                        if (sortBy.value === 'price-asc') return a.price - b.price;
+                        if (sortBy.value === 'price-desc') return b.price - a.price;
+                        if (sortBy.value === 'rating') return b.rating - a.rating;
+                        return a.id - b.id; // Default featured
+                    });
+                });
+
+                // Cart Computations
+                const cartTotalCount = computed(() => cart.value.reduce((sum, item) => sum + item.qty, 0));
+                const cartSubtotal = computed(() => cart.value.reduce((sum, item) => sum + (item.price * item.qty), 0));
+                const discountAmount = computed(() => Math.round(cartSubtotal.value * appliedDiscount.value));
+                const freeShippingRemaining = computed(() => 5000 - cartSubtotal.value);
+                const cartFinalTotal = computed(() => {
+                    const shipping = freeShippingRemaining.value <= 0 || cart.value.length === 0 ? 0 : 500;
+                    return Math.max(0, cartSubtotal.value - discountAmount.value + shipping);
+                });
+
+                const getCategoryName = (catId) => {
+                    const found = categories.find(c => c.id === catId);
+                    return found ? found.name : catId;
+                };
+
+                const getCategoryCount = (catId) => {
+                    return products.value.filter(p => p.category === catId).length;
+                };
+
+                const resetFilters = () => {
+                    selectedCategory.value = 'all';
+                    selectedFilterBadge.value = 'all';
+                    maxPriceFilter.value = 50000;
+                    searchQuery.value = '';
+                    sortBy.value = 'featured';
+                };
+
+                // Toast Notification Logic
+                const showToast = (message, icon = 'fa-solid fa-circle-check text-emerald-400') => {
+                    const id = Date.now();
+                    toasts.value.push({ id, message, icon });
+                    setTimeout(() => {
+                        toasts.value = toasts.value.filter(t => t.id !== id);
+                    }, 3000);
+                };
+
+                // Cart Operations
+                const addToCart = (product, qty = 1, color = null) => {
+                    const chosenColor = color || (product.colors ? product.colors[0] : null);
+                    const existingIndex = cart.value.findIndex(item => item.id === product.id && item.selectedColor === chosenColor);
+                    
+                    if (existingIndex > -1) {
+                        cart.value[existingIndex].qty += qty;
+                    } else {
+                        cart.value.push({
+                            ...product,
+                            qty: qty,
+                            selectedColor: chosenColor
+                        });
+                    }
+                    showToast(`「${product.name}」をカートに追加しました`);
+                };
+
+                const updateCartQty = (index, delta) => {
+                    const newQty = cart.value[index].qty + delta;
+                    if (newQty > 0) {
+                        cart.value[index].qty = newQty;
+                    } else {
+                        removeFromCart(index);
+                    }
+                };
+
+                const removeFromCart = (index) => {
+                    const item = cart.value[index];
+                    cart.value.splice(index, 1);
+                    showToast(`「${item.name}」をカートから削除しました`, 'fa-solid fa-circle-info text-slate-400');
+                };
+
+                // Quick View Modal logic
+                const openQuickView = (product) => {
+                    quickViewProduct.value = product;
+                    selectedColor.value = product.colors ? product.colors[0] : '';
+                    modalQty.value = 1;
+                };
+
+                const addModalToCart = () => {
+                    if (quickViewProduct.value) {
+                        addToCart(quickViewProduct.value, modalQty.value, selectedColor.value);
+                        quickViewProduct.value = null;
+                        isCartOpen.value = true;
+                    }
+                };
+
+                // Wishlist Logic
+                const toggleWishlist = (product) => {
+                    const index = wishlist.value.findIndex(item => item.id === product.id);
+                    if (index > -1) {
+                        wishlist.value.splice(index, 1);
+                        showToast(`「${product.name}」をお気に入りから削除しました`, 'fa-regular fa-heart text-slate-400');
+                    } else {
+                        wishlist.value.push(product);
+                        showToast(`「${product.name}」をお気に入りに追加しました`, 'fa-solid fa-heart text-rose-500');
+                    }
+                };
+
+                const isInWishlist = (productId) => {
+                    return wishlist.value.some(item => item.id === productId);
+                };
+
+                const openWishlistModal = () => {
+                    isWishlistOpen.value = true;
+                };
+
+                // Coupon Application
+                const applyCoupon = () => {
+                    if (couponCode.value.trim().toUpperCase() === 'LUMINA10') {
+                        appliedDiscount.value = 0.1;
+                        showToast('10%OFFクーポンを適用しました！');
+                    } else {
+                        showToast('無効なクーポンコードです', 'fa-solid fa-triangle-exclamation text-amber-400');
+                    }
+                };
+
+                // Checkout Flow
+                const startCheckout = () => {
+                    isCartOpen.value = false;
+                    checkoutStep.value = 1;
+                    isCheckoutOpen.value = true;
+                };
+
+                const completeOrder = () => {
+                    checkoutStep.value = 3;
+                    cart.value = [];
+                    appliedDiscount.value = 0;
+                    couponCode.value = '';
+                };
+
+                const closeCheckout = () => {
+                    isCheckoutOpen.value = false;
+                    checkoutStep.value = 1;
+                };
+
+                const subscribeNewsletter = () => {
+                    if (newsletterEmail.value) {
+                        showToast('ニュースレターの購読登録が完了しました！');
+                        newsletterEmail.value = '';
+                    }
+                };
+
+                return {
+                    searchQuery,
+                    selectedCategory,
+                    selectedFilterBadge,
+                    maxPriceFilter,
+                    sortBy,
+                    mobileMenuOpen,
+                    mobileSearchOpen,
+                    isCartOpen,
+                    isWishlistOpen,
+                    quickViewProduct,
+                    selectedColor,
+                    modalQty,
+                    cart,
+                    wishlist,
+                    couponCode,
+                    appliedDiscount,
+                    isCheckoutOpen,
+                    checkoutStep,
+                    checkoutForm,
+                    newsletterEmail,
+                    toasts,
+                    categories,
+                    products,
+                    filteredProducts,
+                    cartTotalCount,
+                    cartSubtotal,
+                    discountAmount,
+                    freeShippingRemaining,
+                    cartFinalTotal,
+                    getCategoryName,
+                    getCategoryCount,
+                    resetFilters,
+                    addToCart,
+                    updateCartQty,
+                    removeFromCart,
+                    openQuickView,
+                    addModalToCart,
+                    toggleWishlist,
+                    isInWishlist,
+                    openWishlistModal,
+                    applyCoupon,
+                    startCheckout,
+                    completeOrder,
+                    closeCheckout,
+                    subscribeNewsletter
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
